@@ -47,10 +47,6 @@ export const usePhaseStore = create<PhaseState>((set) => ({
           formData.append('photos', photo);
         });
       }
-      if (files?.audio) {
-        // When appending a Blob, we need to specify a filename
-        formData.append('audio', files.audio, 'audio.webm');
-      }
 
       await api.patch(`/phases/${phaseId}`, formData, {
         headers: {

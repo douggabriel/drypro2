@@ -2,13 +2,10 @@ import React, { useState } from 'react';
 import {
   Check,
   Upload,
-  Mic,
   Camera,
   ChevronRight,
   RotateCcw,
-  X,
-  Play,
-  Square
+  X
 } from 'lucide-react';
 import { usePhaseStore } from '../store/phaseStore';
 import { useAuthStore } from '../store/authStore';
@@ -46,8 +43,6 @@ export default function PhaseProgress({
   const [progress, setProgress] = useState(0);
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [zoomImages, setZoomImages] = useState<{ path: string }[] | null>(null);
   const [zoomImageIndex, setZoomImageIndex] = useState(0);
   const { updatePhase, undoPhaseUpdate, isLoading } = usePhaseStore();
@@ -67,7 +62,6 @@ export default function PhaseProgress({
     setProgress(phase.percentage || 0);
     setNotes(phase.notes || '');
     setPhotos([]);
-    setAudioBlob(null);
   };
 
   const handleAdvancePhase = async () => {
@@ -89,8 +83,7 @@ export default function PhaseProgress({
           notes
         },
         {
-          photos,
-          audio: audioBlob
+          photos
         }
       );
 
@@ -121,8 +114,7 @@ export default function PhaseProgress({
           notes
         },
         {
-          photos,
-          audio: audioBlob
+          photos
         }
       );
 
@@ -145,46 +137,10 @@ export default function PhaseProgress({
     }
   };
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks: BlobPart[] = [];
-
-      mediaRecorder.addEventListener('dataavailable', (event) => {
-        audioChunks.push(event.data);
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        setAudioBlob(audioBlob);
-        stream.getTracks().forEach((track) => track.stop());
-      });
-
-      mediaRecorder.start();
-      setIsRecording(true);
-
-      // Store mediaRecorder for stopping
-      (window as any).currentMediaRecorder = mediaRecorder;
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-      alert('Could not access microphone');
-    }
-  };
-
-  const stopRecording = () => {
-    const mediaRecorder = (window as any).currentMediaRecorder;
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-      setIsRecording(false);
-    }
-  };
-
   const resetForm = () => {
     setProgress(0);
     setNotes('');
     setPhotos([]);
-    setAudioBlob(null);
     setSelectedPhase(null);
   };
 
@@ -400,37 +356,6 @@ export default function PhaseProgress({
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-
-              {/* Audio Recording */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Audio Note
-                </label>
-                <div className="flex gap-3">
-                  {!isRecording ? (
-                    <button
-                      onClick={startRecording}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition"
-                    >
-                      <Mic className="w-5 h-5" />
-                      {audioBlob ? 'Re-record Audio' : 'Record Audio'}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={stopRecording}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition animate-pulse"
-                    >
-                      <Square className="w-5 h-5" />
-                      Stop Recording
-                    </button>
-                  )}
-                </div>
-                {audioBlob && (
-                  <p className="text-sm text-green-600 mt-2">
-                    ✓ Audio note recorded
-                  </p>
                 )}
               </div>
 
