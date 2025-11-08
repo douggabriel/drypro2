@@ -44,9 +44,9 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp|mp3|wav|ogg|m4a/;
+    const allowedTypes = /jpeg|jpg|png|gif|webp|mp3|wav|ogg|m4a|webm/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype.includes('webm');
 
     if (mimetype && extname) {
       return cb(null, true);
