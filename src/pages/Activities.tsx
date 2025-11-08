@@ -35,7 +35,7 @@ export default function Activities() {
   });
 
   const canCreateActivity =
-    user?.role === 'ADMIN' || user?.role === 'SUPERVISOR';
+    user?.role === 'ADMIN' || user?.role === 'SUPERVISOR' || user?.role === 'TRADE_WORKER';
 
   return (
     <div className="space-y-6">

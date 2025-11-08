@@ -536,6 +536,8 @@ app.patch('/api/phases/:id', authenticateToken, upload.fields([
         data: {
           phaseId: phase.id,
           filename: files.audio[0].filename,
+          originalName: files.audio[0].originalname,
+          path: files.audio[0].path,
           uploadedById: req.user.id
         }
       });
@@ -548,7 +550,7 @@ app.patch('/api/phases/:id', authenticateToken, upload.fields([
   }
 });
 
-app.post('/api/phases/:id/undo', authenticateToken, async (req, res) => {
+app.post('/api/phases/:id/undo', authenticateToken, authorize('ADMIN', 'SUPERVISOR'), async (req: AuthRequest, res) => {
   try {
     const phaseId = req.params.id;
 

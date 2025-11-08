@@ -6,14 +6,19 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Activity as ActivityIcon
+  Activity as ActivityIcon,
+  Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn, getStatusColor, getPriorityColor } from '../lib/utils';
+import ActivityDetailModal from '../components/ActivityDetailModal';
+import CreateActivityModal from '../components/CreateActivityModal';
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const { activities, fetchActivities } = useActivityStore();
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     inProgress: 0,
@@ -69,15 +74,28 @@ export default function Dashboard() {
 
   const recentActivities = activities.slice(0, 5);
 
+  const canCreateActivity = user?.role === 'ADMIN' || user?.role === 'SUPERVISOR' || user?.role === 'TRADE_WORKER';
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {user?.firstName}!
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Here's what's happening with your projects today
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back, {user?.firstName}!
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Here's what's happening with your projects today
+          </p>
+        </div>
+        {canCreateActivity && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:shadow-lg transition"
+          >
+            <Plus className="w-5 h-5" />
+            Start New Activity
+          </button>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -149,10 +167,10 @@ export default function Dashboard() {
                 totalPhases > 0 ? (completedPhases / totalPhases) * 100 : 0;
 
               return (
-                <Link
+                <div
                   key={activity.id}
-                  to={`/activities/${activity.id}`}
-                  className="block p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:shadow-md transition"
+                  onClick={() => setSelectedActivityId(activity.id)}
+                  className="block p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:shadow-md transition cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -194,12 +212,30 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Activity Detail Modal */}
+      {selectedActivityId && (
+        <ActivityDetailModal
+          activityId={selectedActivityId}
+          onClose={() => setSelectedActivityId(null)}
+        />
+      )}
+
+      {/* Create Activity Modal */}
+      {showCreateModal && (
+        <CreateActivityModal
+          onClose={() => {
+            setShowCreateModal(false);
+            fetchActivities();
+          }}
+        />
+      )}
     </div>
   );
 }

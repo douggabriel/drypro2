@@ -11,9 +11,11 @@ import {
   Square
 } from 'lucide-react';
 import { usePhaseStore } from '../store/phaseStore';
+import { useAuthStore } from '../store/authStore';
 import { cn, formatDateTime } from '../lib/utils';
 import { Button } from './ui/button';
 import { useDropzone } from 'react-dropzone';
+import ImageZoomModal from './ImageZoomModal';
 
 const PHASES = [
   {
@@ -46,7 +48,11 @@ export default function PhaseProgress({
   const [photos, setPhotos] = useState<File[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [zoomImages, setZoomImages] = useState<{ path: string }[] | null>(null);
+  const [zoomImageIndex, setZoomImageIndex] = useState(0);
   const { updatePhase, undoPhaseUpdate, isLoading } = usePhaseStore();
+  const { user } = useAuthStore();
+  const canUndo = user?.role === 'ADMIN' || user?.role === 'SUPERVISOR';
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: { 'image/*': [] },
@@ -233,7 +239,7 @@ export default function PhaseProgress({
                   <span className="text-sm font-semibold text-gray-700">
                     {percentage}%
                   </span>
-                  {phaseData.id && (
+                  {phaseData.id && canUndo && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -274,11 +280,23 @@ export default function PhaseProgress({
                         key={idx}
                         src={`/${photo.path}`}
                         alt="Phase"
-                        className="w-16 h-16 object-cover rounded-lg"
+                        className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setZoomImages(phaseData.photos);
+                          setZoomImageIndex(idx);
+                        }}
                       />
                     ))}
                     {phaseData.photos.length > 3 && (
-                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-sm font-semibold text-gray-600">
+                      <div
+                        className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-300 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setZoomImages(phaseData.photos);
+                          setZoomImageIndex(3);
+                        }}
+                      >
                         +{phaseData.photos.length - 3}
                       </div>
                     )}
@@ -438,6 +456,15 @@ export default function PhaseProgress({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Image Zoom Modal */}
+      {zoomImages && (
+        <ImageZoomModal
+          images={zoomImages}
+          initialIndex={zoomImageIndex}
+          onClose={() => setZoomImages(null)}
+        />
       )}
     </div>
   );
