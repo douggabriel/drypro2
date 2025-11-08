@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  TRADE_WORKER
+}
+
+enum ActivityType {
+  UNIT
+  PATCH
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ActivityStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+enum PhaseStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum MaterialCategory {
+  PLASTERBOARD
+  COMPOUND
+  TOOLS
+  TAPE
+  SCREWS
+  OTHER
+}
+
+enum Urgency {
+  LOW
+  NORMAL
+  URGENT
+  CRITICAL
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PARTIALLY_APPROVED
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
+model User {
+  id                    String            @id @default(uuid())
+  email                 String            @unique
+  password              String
+  firstName             String
+  lastName              String
+  role                  Role
+  avatar                String?
+  phone                 String?
+  isActive              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  supervisedActivities  Activity[]        @relation("Supervisor")
+  assignedActivities    ActivityWorker[]
+  completedPhases       Phase[]           @relation("CompletedBy")
+  phaseHistoryActions   PhaseHistory[]
+  uploadedPhotos        Photo[]
+  uploadedAudioNotes    AudioNote[]
+  materialRequests      MaterialRequest[] @relation("RequestedBy")
+  approvedRequests      MaterialRequest[] @relation("ApprovedBy")
+  notifications         Notification[]
+  syncQueue             SyncQueue[]
+
+  @@map("users")
+}
+
+model Site {
+  id         String     @id @default(uuid())
+  name       String
+  address    String
+  city       String?
+  state      String?
+  zipCode    String?
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+
+  activities Activity[]
+
+  @@map("sites")
+}
+
+model Activity {
+  id               String            @id @default(uuid())
+  type             ActivityType
+  siteId           String
+  building         String
+  floor            String
+  unit             String
+  area             String?
+  supervisorId     String
+  priority         Priority          @default(NORMAL)
+  status           ActivityStatus    @default(PENDING)
+  deadline         DateTime?
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  site             Site              @relation(fields: [siteId], references: [id])
+  supervisor       User              @relation("Supervisor", fields: [supervisorId], references: [id])
+  workers          ActivityWorker[]
+  phases           Phase[]
+  materialRequests MaterialRequest[]
+
+  @@map("activities")
+}
+
+model ActivityWorker {
+  activityId  String
+  workerId    String
+  assignedAt  DateTime  @default(now())
+
+  activity    Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  worker      User      @relation(fields: [workerId], references: [id])
+
+  @@id([activityId, workerId])
+  @@map("activity_workers")
+}
+
+model Phase {
+  id            String       @id @default(uuid())
+  activityId    String
+  phaseNumber   Int
+  phaseName     String
+  percentage    Int          @default(0)
+  status        PhaseStatus  @default(PENDING)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  completedById String?
+  notes         String?
+
+  activity      Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  completedBy   User?         @relation("CompletedBy", fields: [completedById], references: [id])
+  history       PhaseHistory[]
+  photos        Photo[]
+  audioNotes    AudioNote[]
+
+  @@unique([activityId, phaseNumber])
+  @@map("phases")
+}
+
+model PhaseHistory {
+  id                 String   @id @default(uuid())
+  phaseId            String
+  previousPercentage Int?
+  previousStatus     String?
+  modifiedById       String
+  modifiedAt         DateTime @default(now())
+  action             String
+
+  phase              Phase    @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  modifiedBy         User     @relation(fields: [modifiedById], references: [id])
+
+  @@map("phase_history")
+}
+
+model Photo {
+  id           String   @id @default(uuid())
+  phaseId      String
+  filename     String
+  originalName String?
+  path         String
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+
+  phase        Phase    @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+
+  @@map("photos")
+}
+
+model AudioNote {
+  id           String   @id @default(uuid())
+  phaseId      String
+  filename     String
+  duration     Int?
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+
+  phase        Phase    @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+
+  @@map("audio_notes")
+}
+
+model Material {
+  id           String            @id @default(uuid())
+  name         String
+  category     MaterialCategory
+  defaultUnit  String
+  minimumStock Int?
+  currentStock Int?
+  costPerUnit  Float?
+  supplier     String?
+  isActive     Boolean           @default(true)
+
+  requests     MaterialRequest[]
+
+  @@map("materials")
+}
+
+model MaterialRequest {
+  id             String        @id @default(uuid())
+  requestedById  String
+  materialId     String
+  activityId     String?
+  quantity       Int
+  unit           String
+  urgency        Urgency       @default(NORMAL)
+  justification  String
+  status         RequestStatus @default(PENDING)
+  approvedById   String?
+  approverNotes  String?
+  requestedAt    DateTime      @default(now())
+  respondedAt    DateTime?
+
+  requestedBy    User          @relation("RequestedBy", fields: [requestedById], references: [id])
+  material       Material      @relation(fields: [materialId], references: [id])
+  activity       Activity?     @relation(fields: [activityId], references: [id])
+  approvedBy     User?         @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  @@map("material_requests")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model SyncQueue {
+  id         String     @id @default(uuid())
+  userId     String
+  action     String
+  entity     String
+  data       Json
+  status     SyncStatus @default(PENDING)
+  retryCount Int        @default(0)
+  createdAt  DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sync_queue")
+}
