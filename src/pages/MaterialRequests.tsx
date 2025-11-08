@@ -122,15 +122,20 @@ export default function MaterialRequests() {
   };
 
   const sendToWhatsApp = (request: any) => {
-    const date = new Date(request.requestedAt).toLocaleDateString('en-US');
-    const time = new Date(request.requestedAt).toLocaleTimeString('en-US', {
+    const date = new Date(request.requestedAt).toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const time = new Date(request.requestedAt).toLocaleTimeString('en-AU', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: false
     });
 
     let location = '';
     if (request.activity) {
-      location = `📍 *Location:* ${request.activity.building} - ${request.activity.unit}`;
+      location = `\n📍 *Location:* ${request.activity.building} - ${request.activity.unit}`;
       if (request.activity.floor) {
         location += ` (Floor ${request.activity.floor})`;
       }
@@ -143,14 +148,13 @@ export default function MaterialRequests() {
       CRITICAL: '🔴'
     }[request.urgency] || '⚪';
 
-    const message = `🛠️ *MATERIAL REQUEST*
+    const message = `🛠 *MATERIAL REQUEST*
 
 📦 *Material:* ${request.material?.name || 'N/A'}
 📊 *Quantity:* ${request.quantity} ${request.unit}
 ${urgencyEmoji} *Urgency:* ${request.urgency}
 
-📅 *Date:* ${date} at ${time}
-${location}
+📅 *Date:* ${date} at ${time}${location}
 
 👤 *Requested by:* ${request.requestedBy?.firstName} ${request.requestedBy?.lastName}
 
