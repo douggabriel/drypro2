@@ -41,3 +41,6 @@ prisma/*.db-journal
 # Build
 build
 dist
+
+# Vercel
+.vercel
