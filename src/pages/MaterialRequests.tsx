@@ -122,17 +122,17 @@ export default function MaterialRequests() {
   };
 
   const sendToWhatsApp = (request: any) => {
-    const date = new Date(request.requestedAt).toLocaleDateString('pt-BR');
-    const time = new Date(request.requestedAt).toLocaleTimeString('pt-BR', {
+    const date = new Date(request.requestedAt).toLocaleDateString('en-US');
+    const time = new Date(request.requestedAt).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
 
     let location = '';
     if (request.activity) {
-      location = `📍 *Local:* ${request.activity.building} - ${request.activity.unit}`;
+      location = `📍 *Location:* ${request.activity.building} - ${request.activity.unit}`;
       if (request.activity.floor) {
-        location += ` (Andar ${request.activity.floor})`;
+        location += ` (Floor ${request.activity.floor})`;
       }
     }
 
@@ -143,22 +143,22 @@ export default function MaterialRequests() {
       CRITICAL: '🔴'
     }[request.urgency] || '⚪';
 
-    const message = `🛠️ *SOLICITAÇÃO DE MATERIAL*
+    const message = `🛠️ *MATERIAL REQUEST*
 
 📦 *Material:* ${request.material?.name || 'N/A'}
-📊 *Quantidade:* ${request.quantity} ${request.unit}
-${urgencyEmoji} *Urgência:* ${request.urgency}
+📊 *Quantity:* ${request.quantity} ${request.unit}
+${urgencyEmoji} *Urgency:* ${request.urgency}
 
-📅 *Data:* ${date} às ${time}
+📅 *Date:* ${date} at ${time}
 ${location}
 
-👤 *Solicitante:* ${request.requestedBy?.firstName} ${request.requestedBy?.lastName}
+👤 *Requested by:* ${request.requestedBy?.firstName} ${request.requestedBy?.lastName}
 
-💬 *Justificativa:*
+💬 *Justification:*
 ${request.justification}
 
 ---
-_Enviado via Drywall Manager_`;
+_Sent via Drywall Manager_`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
@@ -297,7 +297,7 @@ _Enviado via Drywall Manager_`;
                       className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition flex items-center gap-2"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Enviar via WhatsApp
+                      Send via WhatsApp
                     </button>
 
                     {canApprove && request.status === 'PENDING' && (
