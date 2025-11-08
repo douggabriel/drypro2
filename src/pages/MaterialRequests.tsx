@@ -135,34 +135,31 @@ export default function MaterialRequests() {
 
     let location = '';
     if (request.activity) {
-      location = `\n📍 *Location:* ${request.activity.building} - ${request.activity.unit}`;
+      location = `\n\u{1F4CD} *Location:* ${request.activity.building} - ${request.activity.unit}`;
       if (request.activity.floor) {
         location += ` (Floor ${request.activity.floor})`;
       }
     }
 
     const urgencyEmoji = {
-      LOW: '🟢',
-      NORMAL: '🟡',
-      URGENT: '🟠',
-      CRITICAL: '🔴'
-    }[request.urgency] || '⚪';
+      LOW: '\u{1F7E2}',      // 🟢
+      NORMAL: '\u{1F7E1}',   // 🟡
+      URGENT: '\u{1F7E0}',   // 🟠
+      CRITICAL: '\u{1F534}'  // 🔴
+    }[request.urgency] || '\u{26AA}';
 
-    const message = `🛠 *MATERIAL REQUEST*
+    const message = `\u{1F6E0} *MATERIAL REQUEST*
 
-📦 *Material:* ${request.material?.name || 'N/A'}
-📊 *Quantity:* ${request.quantity} ${request.unit}
+\u{1F4E6} *Material:* ${request.material?.name || 'N/A'}
+\u{1F4CA} *Quantity:* ${request.quantity} ${request.unit}
 ${urgencyEmoji} *Urgency:* ${request.urgency}
 
-📅 *Date:* ${date} at ${time}${location}
+\u{1F4C5} *Date:* ${date} at ${time}${location}
 
-👤 *Requested by:* ${request.requestedBy?.firstName} ${request.requestedBy?.lastName}
+\u{1F464} *Requested by:* ${request.requestedBy?.firstName} ${request.requestedBy?.lastName}
 
-💬 *Justification:*
-${request.justification}
-
----
-_Sent via Drywall Manager_`;
+\u{1F4AC} *Justification:*
+${request.justification}`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
