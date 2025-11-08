@@ -5,7 +5,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  MessageCircle
 } from 'lucide-react';
 import { useMaterialStore } from '../store/materialStore';
 import { useActivityStore } from '../store/activityStore';
@@ -118,6 +119,51 @@ export default function MaterialRequests() {
       default:
         return <Clock className="w-5 h-5 text-yellow-600" />;
     }
+  };
+
+  const sendToWhatsApp = (request: any) => {
+    const date = new Date(request.requestedAt).toLocaleDateString('pt-BR');
+    const time = new Date(request.requestedAt).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    let location = '';
+    if (request.activity) {
+      location = `📍 *Local:* ${request.activity.building} - ${request.activity.unit}`;
+      if (request.activity.floor) {
+        location += ` (Andar ${request.activity.floor})`;
+      }
+    }
+
+    const urgencyEmoji = {
+      LOW: '🟢',
+      NORMAL: '🟡',
+      URGENT: '🟠',
+      CRITICAL: '🔴'
+    }[request.urgency] || '⚪';
+
+    const message = `🛠️ *SOLICITAÇÃO DE MATERIAL*
+
+📦 *Material:* ${request.material?.name || 'N/A'}
+📊 *Quantidade:* ${request.quantity} ${request.unit}
+${urgencyEmoji} *Urgência:* ${request.urgency}
+
+📅 *Data:* ${date} às ${time}
+${location}
+
+👤 *Solicitante:* ${request.requestedBy?.firstName} ${request.requestedBy?.lastName}
+
+💬 *Justificativa:*
+${request.justification}
+
+---
+_Enviado via Drywall Manager_`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, '_blank');
   };
 
   const canApprove = user?.role === 'ADMIN' || user?.role === 'SUPERVISOR';
@@ -245,8 +291,16 @@ export default function MaterialRequests() {
                     {request.status}
                   </span>
 
-                  {canApprove && request.status === 'PENDING' && (
-                    <div className="flex gap-2 mt-2">
+                  <div className="flex flex-col gap-2 mt-2">
+                    <button
+                      onClick={() => sendToWhatsApp(request)}
+                      className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition flex items-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Enviar via WhatsApp
+                    </button>
+
+                    {canApprove && request.status === 'PENDING' && (
                       <button
                         onClick={() => {
                           setSelectedRequest(request);
@@ -256,8 +310,8 @@ export default function MaterialRequests() {
                       >
                         Review
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
